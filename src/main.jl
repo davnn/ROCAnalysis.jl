@@ -49,6 +49,29 @@ function roc(tar::Vector{T}, non::Vector{T}; laplace::Bool=false, collapse=true)
     Roc(pfa, pmiss, ch, θ, llr)
 end
 
+"""
+`roc(labels, scores, posclass; laplace, collapse)`
+
+Utility method to create the ROC from scores and binary labels.
+"""
+function roc(labels::Vector{U}, scores::Vector{T}, posclass::V; laplace::Bool=false, collapse=true) where {T <: Real, U <: Integer, V <: Integer}
+    classes = unique(labels)
+    if posclass ∉ classes
+        throw(DomainError("posclass ∉ classes", "The specified positive class = $posclass cannot be found in labels."))
+    end
+
+    if length(labels) != length(scores)
+        throw(DomainError("length(labels) != length(scores)", "Labels and scores must be of equal length."))
+    end
+
+    if length(classes) > 2
+        @warn "More than two classes detected in labels, treating every label as negative except $posclass"
+    end
+
+    pos = labels .== posclass
+    roc(scores[pos], scores[.!(pos)]; laplace, collapse)
+end
+
 ## this returns the target count (1's an 0's for targets and non targets) and scores,
 ## in the order of the scores.
 function sortscores(tar::Vector{T}, non::Vector{T}) where T<:Real
